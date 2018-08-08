@@ -2,9 +2,11 @@ import numpy as np
 import scipy
 import matplotlib.pylab as plt
 from scipy.optimize import curve_fit
+import sys
 
-###### Save data? (true/false) ######
-save = "trueee"
+### Error catching ###
+if len(sys.argv) != 3:
+    sys.exit("Failure. Run with start and end file numbers.")
 
 # Fit funtion
 def exp1(x, a, b, c):
@@ -12,13 +14,10 @@ def exp1(x, a, b, c):
 
 ####### file name here ######
 inputfileroot = "20180807_"
-startfile = 6
-numfiles = 6
+startfile = int(sys.argv[1])
+endfile = int(sys.argv[2])
 backgroundfile = "background.asc"
 time_offset = 0. # ns
-fit_start = 17
-fit_points = 80
-fit_end = (fit_start + fit_points)
 
 # cutouts
 cutout1 = 735 #pixelnum 585 nm
@@ -26,10 +25,10 @@ cutout2 = 1039 #pixelnum 606 nm
 cutout3 = 1593 #1359pixelnum 628 nm
 
 #plotpoint (pixel number)
-plotpoint = 1050
-plotpoint2 = 1500
+plotpoint = 1500
 
-for q in xrange (startfile, numfiles+1):
+
+for q in xrange (startfile, endfile+1):
     print q
 
     # File names
@@ -49,19 +48,20 @@ for q in xrange (startfile, numfiles+1):
     size_line = all_lines[-10]
     stepsize = int("".join([size_line[i] for i in xrange(-6,-1)]))
     fullfile.close()
-    
+
     rawspectra = np.genfromtxt(inputfile, delimiter=',', skip_footer = 28)
     background = np.genfromtxt(backgroundfile, delimiter=',', skip_footer = 28)
 
     #Initialise arrays
     times = []
-    points = [0 for j in range(num_steps)]
+    points = [0 for j in xrange(num_steps)]
+    testpoints = [0 for j in xrange(num_steps)]
     wavelengths = []
     lifetimes = [0 for j in xrange(2047)]
     res_vals = [0 for j in xrange(2047)]
     backgrounddata = [0 for j in xrange(2047)]
-    spectra = [[0 for j in range(num_steps)] for i in range(2047)]
-    roughspec = [[0 for j in range(num_steps)] for i in range(2047)]
+    spectra = [[0 for j in xrange(num_steps)] for i in xrange(2047)]
+    roughspec = [[0 for j in xrange(num_steps)] for i in xrange(2047)]
 
     #Output arrays
     lifedata = np.zeros(shape=(2047,3))
@@ -75,7 +75,7 @@ for q in xrange (startfile, numfiles+1):
         times.append(int(stepsize*(i-1) + time_offset))
 
     times = np.array(times)
-	
+
     for i in range(0, 2047):
         wavelengths.append(rawspectra[i,0])
         backgrounddata[i] = background[i,1]
@@ -95,8 +95,8 @@ for q in xrange (startfile, numfiles+1):
             avgspec[1] = roughspec[j-2][i-1]
             avgspec[2] = roughspec[j-1][i-1]
             avgspec[3] = roughspec[j+1][i-1]
-	    avgspec[4] = roughspec[j+2][i-1]
-	    avgspec[5] = roughspec[j+3][i-1]
+            avgspec[4] = roughspec[j+2][i-1]
+            avgspec[5] = roughspec[j+3][i-1]
 
             averg = np.mean(avgspec)
 
@@ -107,9 +107,23 @@ for q in xrange (startfile, numfiles+1):
 
             spectra[j][i-1] = roughspec[j][i-1]
 
+
+    # Test plot used to determine fitting limits
+    for t in xrange(0, num_steps):
+        testpoints[t] = spectra[plotpoint][t]
+
+    plt.semilogy(times, testpoints, 'o')
+    plt.xlabel(q)
+    plt.show()
+    print "Enter fitting limits (ns): "
+    sys.stdout.flush()
+    str_start, str_end = raw_input().split()
+    fit_start = int(np.floor(int(str_start)/stepsize))
+    fit_end = int(np.floor(int(str_end)/stepsize))
+
     # Determine lifetimes
     for l in xrange(350, 1700):
-        for n in range(0, num_steps):
+        for n in xrange(0, num_steps):
             points[n] = spectra[l][n]
 
         if l == cutout1:
@@ -131,7 +145,7 @@ for q in xrange (startfile, numfiles+1):
         ss_tot = np.sum((points[fit_start:fit_end] - np.mean(points[fit_start:fit_end]))**2)
         r_squared = 1 - (ss_res/ss_tot)
         res_vals[l] = r_squared
-	
+
 	# Print lifetime at l = cutout1
 	if l == cutout1:
 	    print("Cutout1 lifetime = ")
@@ -146,9 +160,9 @@ for q in xrange (startfile, numfiles+1):
         if l == cutout3:
 	    print("Cutout3 lifetime = ")
 	    print lifet
-	
+
 	# Plot sample at l = plotpoint
-	if (l == plotpoint2):
+	if (l == plotpoint):
 	    print lifet
             print r_squared
             x_new = np.linspace(times[fit_start], times[fit_end], 500)
@@ -157,7 +171,8 @@ for q in xrange (startfile, numfiles+1):
             plt.plot(x_new, y_new)
 	    plt.xlabel(q)
             plt.show()
-    
+
+
     # Smooth lifetimes
     for a in xrange(340,1690):
 	avglif = [0 for i in range (6)]
@@ -166,8 +181,9 @@ for q in xrange (startfile, numfiles+1):
 	avglif[2] = lifetimes[a-1]
 	avglif[3] = lifetimes[a+1]
 	avglif[4] = lifetimes[a+2]
-	avglif[5] = lifetimes[a+3]	
+	avglif[5] = lifetimes[a+3]
 	lifnow = lifetimes[a]
+
 
 	averglif = np.mean(avglif)
 
@@ -198,8 +214,16 @@ for q in xrange (startfile, numfiles+1):
         cutoutdata[k][2] = cutoutpoints2[k]
         cutoutdata[k][3] = cutoutpoints3[k]
 
-    if save == "true":
+
+    print("Save data? (Y/N)")
+    sys.stdout.flush()
+    save = raw_input()
+
+    if save == "Y" or save == "y":
         np.savetxt(outputspecfile, outputspectra, delimiter=',')
         np.savetxt(outputfile, lifedata, delimiter=',')
         np.savetxt(cutoutfile, cutoutdata, delimiter=',')
+	print("\n\nLifetime and time-profile data saved.\n\n")
+    else:
+	print("\n\nLifetime and time-profile data not saved.\n\n")
 
