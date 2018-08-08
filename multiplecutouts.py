@@ -13,7 +13,7 @@ def exp1(x, a, b, c):
     return (a*np.exp(-x/b) + c)
 
 ####### file name here ######
-inputfileroot = "20180807_"
+inputfileroot = "20180808_"
 startfile = int(sys.argv[1])
 endfile = int(sys.argv[2])
 backgroundfile = "background.asc"
@@ -25,7 +25,7 @@ cutout2 = 1039 #pixelnum 606 nm
 cutout3 = 1593 #1359pixelnum 628 nm
 
 #plotpoint (pixel number)
-plotpoint = 1500
+plotpoint = 1024
 
 
 for q in xrange (startfile, endfile+1):
@@ -148,27 +148,29 @@ for q in xrange (startfile, endfile+1):
 
 	# Print lifetime at l = cutout1
 	if l == cutout1:
-	    print("Cutout1 lifetime = ")
-	    print lifet
+	    print("\n\nPixel "+str(cutout1))
+	    print("Cutout1 lifetime = "+str(lifet))
+	    print("r^2 = "+str(r_squared))
 
 	# Print lifetime at l = cutout2
 	if l == cutout2:
-	    print("Cutout2 lifetime = ")
-	    print lifet
+	    print("\n\nPixel "+str(cutout2))
+	    print("Cutout2 lifetime = "+str(lifet))
+	    print("r^2 = "+str(r_squared))
 
         # Print lifetime at l = cutout3
         if l == cutout3:
-	    print("Cutout3 lifetime = ")
-	    print lifet
+	    print("\n\nPixel "+str(cutout3))
+	    print("Cutout3 lifetime = "+str(lifet))
+	    print("r^2 = "+str(r_squared))
 
 	# Plot sample at l = plotpoint
 	if (l == plotpoint):
-	    print lifet
-            print r_squared
             x_new = np.linspace(times[fit_start], times[fit_end], 500)
             y_new = exp1(x_new, *popt)
             plt.plot(times, points, 'o')
             plt.plot(x_new, y_new)
+	    plt.title(r'$\tau = ' + str(int(lifet)) + ' ns , r^{2} = $' + str(r_squared))
 	    plt.xlabel(q)
             plt.show()
 
