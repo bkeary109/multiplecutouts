@@ -3,6 +3,7 @@ import scipy
 import matplotlib.pylab as plt
 from scipy.optimize import curve_fit
 import sys
+import os
 
 ### Error catching ###
 if len(sys.argv) != 3:
@@ -13,7 +14,7 @@ def exp1(x, a, b, c):
     return (a*np.exp(-x/b) + c)
 
 ####### file name here ######
-inputfileroot = "20180808_"
+inputfileroot = os.getcwd().split('\\')[-1] + "_"
 startfile = int(sys.argv[1])
 endfile = int(sys.argv[2])
 backgroundfile = "background.asc"
@@ -22,7 +23,7 @@ time_offset = 0. # ns
 # cutouts
 cutout1 = 735 #pixelnum 585 nm
 cutout2 = 1039 #pixelnum 606 nm
-cutout3 = 1593 #1359pixelnum 628 nm
+cutout3 = 1359 #pixelnum 628 nm
 
 #plotpoint (pixel number)
 plotpoint = 1024
